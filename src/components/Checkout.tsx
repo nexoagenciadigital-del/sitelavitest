@@ -50,7 +50,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, onBack, onOrderComplete }) =
         .insert({
           user_id: user.id,
           total_amount: totalAmount,
-          status: 'completed', // Or 'pending' if you have a payment gateway
+          status: 'completed',
           shipping_address: shippingAddress,
         })
         .select()
@@ -77,7 +77,22 @@ const Checkout: React.FC<CheckoutProps> = ({ items, onBack, onOrderComplete }) =
         throw new Error(orderItemsError.message || 'Falha ao adicionar itens ao pedido.');
       }
 
-      onOrderComplete(); // Notify App.tsx that order is complete
+      // 3. Update product stock
+      for (const item of items) {
+        const { error: stockError } = await supabase
+          .from('products')
+          .update({ 
+            stock: Math.max(0, item.product.stock - item.quantity),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.product.id);
+
+        if (stockError) {
+          console.error('Error updating stock for product:', item.product.id, stockError);
+        }
+      }
+
+      onOrderComplete();
     } catch (err: any) {
       console.error('Erro ao finalizar pedido:', err);
       setError(err.message || 'Ocorreu um erro ao finalizar seu pedido. Tente novamente.');
@@ -97,10 +112,18 @@ const Checkout: React.FC<CheckoutProps> = ({ items, onBack, onOrderComplete }) =
             <p className="text-gray-600">Seu carrinho está vazio.</p>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {items.map((item, index) => (
-                <li key={`${item.product.id}-${item.size}-${index}`} className="py-4 flex justify-between items-center">
+              {items.map((item) => (
+                <li key={item.id} className="py-4 flex justify-between items-center">
                   <div className="flex items-center">
-                    <img src={item.product.image_urls[0]} alt={item.product.name} className="w-16 h-16 object-cover rounded-md mr-4" />
+                    <img 
+                      src={item.product.image_urls[0] || 'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg?auto=compress&cs=tinysrgb&w=400'} 
+                      alt={item.product.name} 
+                      className="w-16 h-16 object-cover rounded-md mr-4"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg?auto=compress&cs=tinysrgb&w=400';
+                      }}
+                    />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">{item.product.name}</h3>
                       <p className="text-sm text-gray-600">Tamanho: {item.size}</p>
@@ -198,7 +221,6 @@ const Checkout: React.FC<CheckoutProps> = ({ items, onBack, onOrderComplete }) =
               <span className="ml-2 text-gray-700">PIX</span>
             </label>
           </div>
-          {/* Add more payment details fields here if needed */}
 
           {error && <p className="text-red-500 text-center mt-4">{error}</p>}
 
@@ -212,7 +234,7 @@ const Checkout: React.FC<CheckoutProps> = ({ items, onBack, onOrderComplete }) =
             </button>
             <button
               type="submit"
-              className="px-8 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 ease-in-out font-bold text-lg"
+              className="px-8 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 ease-in-out font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading || items.length === 0}
             >
               {loading ? 'Finalizando...' : 'Confirmar Pedido'}

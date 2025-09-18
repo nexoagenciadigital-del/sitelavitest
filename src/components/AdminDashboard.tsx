@@ -38,26 +38,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings 
     const success = await updateSiteSettings(editableSettings);
     if (success) {
       setMessage('Configurações salvas com sucesso!');
+      setTimeout(() => setMessage(''), 3000);
     } else {
       setMessage('Erro ao salvar configurações.');
+      setTimeout(() => setMessage(''), 3000);
     }
   };
 
   if (!user || user.user_profile?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-red-100 text-red-700">
-        Acesso negado. Você não tem permissão de administrador.
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
+          <p>Você não tem permissão de administrador.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">Painel do Administrador</h1>
-
+      <div className="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-8">
-          <p className="text-lg text-gray-700">Bem-vindo, {user.user_profile?.name || user.email}!</p>
+          <div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">Painel do Administrador</h1>
+            <p className="text-lg text-gray-700">Bem-vindo, {user.user_profile?.name || user.email}!</p>
+          </div>
           <button
             onClick={onLogout}
             className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition duration-300"
@@ -67,60 +73,214 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings 
         </div>
 
         {message && (
-          <div className={`p-3 mb-4 rounded-md text-center ${message.includes('sucesso') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <div className={`p-4 mb-6 rounded-md text-center ${
+            message.includes('sucesso') 
+              ? 'bg-green-100 text-green-700 border border-green-200' 
+              : 'bg-red-100 text-red-700 border border-red-200'
+          }`}>
             {message}
           </div>
         )}
 
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">Configurações do Site</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {Object.keys(editableSettings).filter(key => typeof editableSettings[key as keyof SiteSettings] === 'string' || typeof editableSettings[key as keyof SiteSettings] === 'number').map(key => (
-            <div key={key}>
-              <label htmlFor={key} className="block text-sm font-medium text-gray-700 capitalize mb-1">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </label>
-              <input
-                type={typeof editableSettings[key as keyof SiteSettings] === 'number' ? 'number' : 'text'}
-                id={key}
-                name={key}
-                value={String(editableSettings[key as keyof SiteSettings] || '')}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Configurações Básicas */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Configurações Básicas</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome da Empresa
+                </label>
+                <input
+                  type="text"
+                  id="company_name"
+                  name="company_name"
+                  value={editableSettings.company_name || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefone
+                </label>
+                <input
+                  type="text"
+                  id="phone"
+                  name="phone"
+                  value={editableSettings.phone || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={editableSettings.email || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                  Endereço
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  value={editableSettings.address || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Redes Sociais */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Redes Sociais</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 mb-1">
+                  Instagram
+                </label>
+                <input
+                  type="text"
+                  id="instagram"
+                  name="instagram"
+                  value={editableSettings.instagram || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="@lavibaby"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="facebook" className="block text-sm font-medium text-gray-700 mb-1">
+                  Facebook
+                </label>
+                <input
+                  type="text"
+                  id="facebook"
+                  name="facebook"
+                  value={editableSettings.facebook || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
+                  WhatsApp
+                </label>
+                <input
+                  type="text"
+                  id="whatsapp"
+                  name="whatsapp"
+                  value={editableSettings.whatsapp || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="5511999999999"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="working_hours" className="block text-sm font-medium text-gray-700 mb-1">
+                  Horário de Funcionamento
+                </label>
+                <input
+                  type="text"
+                  id="working_hours"
+                  name="working_hours"
+                  value={editableSettings.working_hours || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Conteúdo do Site */}
+          <div className="bg-gray-50 p-6 rounded-lg lg:col-span-2">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Conteúdo do Site</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="hero_title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Título Principal
+                </label>
+                <input
+                  type="text"
+                  id="hero_title"
+                  name="hero_title"
+                  value={editableSettings.hero_title || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="hero_subtitle" className="block text-sm font-medium text-gray-700 mb-1">
+                  Subtítulo
+                </label>
+                <textarea
+                  id="hero_subtitle"
+                  name="hero_subtitle"
+                  value={editableSettings.hero_subtitle || ''}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="about_title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Título Sobre Nós
+                </label>
+                <input
+                  type="text"
+                  id="about_title"
+                  name="about_title"
+                  value={editableSettings.about_title || ''}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="about_description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição Sobre Nós
+                </label>
+                <textarea
+                  id="about_description"
+                  name="about_description"
+                  value={editableSettings.about_description || ''}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Links dos Botões</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {editableSettings.button_links && Object.keys(editableSettings.button_links).map(key => (
-            <div key={key}>
-              <label htmlFor={`button-link-${key}`} className="block text-sm font-medium text-gray-700 capitalize mb-1">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </label>
-              <input
-                type="text"
-                id={`button-link-${key}`}
-                name={`button_links.${key}`}
-                value={editableSettings.button_links?.[key as keyof typeof editableSettings.button_links] || ''}
-                onChange={(e) => handleButtonLinkChange(key, e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center">
+        <div className="text-center mt-8">
           <button
             onClick={handleSaveSettings}
-            className="bg-indigo-600 text-white px-8 py-3 rounded-md hover:bg-indigo-700 transition duration-300 font-semibold text-lg"
+            className="bg-indigo-600 text-white px-12 py-4 rounded-md hover:bg-indigo-700 transition duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading}
           >
             {isLoading ? 'Salvando...' : 'Salvar Configurações'}
           </button>
         </div>
-
-        {/* Adicione outras seções de gerenciamento aqui, como produtos, pedidos, etc. */}
       </div>
     </div>
   );

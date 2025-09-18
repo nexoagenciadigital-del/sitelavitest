@@ -2,40 +2,35 @@ import { User as SupabaseAuthUser } from '@supabase/supabase-js';
 
 // Tipos centralizados para melhor organização
 export interface Product {
-  id: string; // Changed to string for UUID
+  id: string;
   name: string;
+  slug: string;
+  description: string;
   price: number;
-  original_price?: number; // Changed to original_price
-  image?: string;
-  rating?: number;
-  badge?: string;
-  badge_color?: string; // Changed to badge_color
-  description?: string;
-  sizes?: string[];
-  colors?: string[];
-  category_id: string; // Changed to category_id for FK
-  in_stock?: boolean; // Changed to in_stock
-  discount?: number;
-  stock?: number;
+  image_urls: string[];
+  category_id: string;
+  stock: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Category {
   id: string;
   name: string;
+  slug: string;
+  image_url: string;
+  created_at: string;
 }
 
 export interface CartItem {
-  id: number; // This is a local ID for cart, not product ID
-  product_id: string; // Reference to Product.id
-  name: string;
-  price: number;
-  image?: string;
+  id: number; // Local cart ID
+  product: Product;
+  size: string;
   quantity: number;
-  size?: string;
 }
 
 export interface UserProfile {
-  id: string; // References auth.users.id
+  id: string;
   name: string;
   role: 'admin' | 'user';
   cpf?: string;
@@ -89,4 +84,30 @@ export interface SiteSettings {
     criarConta: string;
   };
   updated_at?: string;
+}
+
+export interface Order {
+  id: string;
+  user_id: string;
+  total_amount: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  shipping_address: {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  size: string;
+  created_at: string;
 }

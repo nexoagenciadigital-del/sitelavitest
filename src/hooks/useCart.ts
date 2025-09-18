@@ -4,8 +4,8 @@ import { Product, CartItem } from '../types';
 interface UseCartResult {
   items: CartItem[];
   addToCart: (product: Product, size: string, quantity: number) => void;
-  updateQuantity: (productId: string, size: string, newQuantity: number) => void;
-  removeItem: (productId: string, size: string) => void;
+  updateQuantity: (itemId: number, newQuantity: number) => void;
+  removeItem: (itemId: number) => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
   clearCart: () => void;
@@ -23,7 +23,12 @@ export const useCart = (): UseCartResult => {
   useEffect(() => {
     const storedCart = localStorage.getItem(CART_STORAGE_KEY);
     if (storedCart) {
-      setItems(JSON.parse(storedCart));
+      try {
+        setItems(JSON.parse(storedCart));
+      } catch (error) {
+        console.error('Error parsing cart from localStorage:', error);
+        localStorage.removeItem(CART_STORAGE_KEY);
+      }
     }
   }, []);
 
@@ -42,26 +47,32 @@ export const useCart = (): UseCartResult => {
         updatedItems[existingItemIndex].quantity += quantity;
         return updatedItems;
       } else {
-        return [...prevItems, { product, size, quantity }];
+        const newItem: CartItem = {
+          id: Date.now() + Math.random(), // Simple ID generation
+          product,
+          size,
+          quantity
+        };
+        return [...prevItems, newItem];
       }
     });
   }, []);
 
-  const updateQuantity = useCallback((productId: string, size: string, newQuantity: number) => {
+  const updateQuantity = useCallback((itemId: number, newQuantity: number) => {
     setItems(prevItems => {
       return prevItems
         .map(item =>
-          item.product.id === productId && item.size === size
+          item.id === itemId
             ? { ...item, quantity: newQuantity }
             : item
         )
-        .filter(item => item.quantity > 0); // Remove if quantity becomes 0
+        .filter(item => item.quantity > 0);
     });
   }, []);
 
-  const removeItem = useCallback((productId: string, size: string) => {
+  const removeItem = useCallback((itemId: number) => {
     setItems(prevItems =>
-      prevItems.filter(item => !(item.product.id === productId && item.size === size))
+      prevItems.filter(item => item.id !== itemId)
     );
   }, []);
 
