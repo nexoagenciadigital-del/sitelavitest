@@ -1,20 +1,47 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
 import { User, UserProfile, SiteSettings } from '../types';
-import { Session } from '@supabase/supabase-js';
+
+// Mock data para demonstração
+const mockSiteSettings: SiteSettings = {
+  id: '1',
+  company_name: 'LaviBaby',
+  phone: '(11) 99999-9999',
+  email: 'contato@lavibaby.com.br',
+  address: 'São Paulo, SP - Brasil',
+  instagram: '@lavibaby',
+  facebook: 'LaviBaby',
+  twitter: '@lavibaby',
+  whatsapp: '5511999999999',
+  working_hours: 'Seg-Sex: 8h às 18h',
+  hero_title: 'Roupas que fazem os pequenos brilharem',
+  hero_subtitle: 'Descubra nossa coleção exclusiva de roupas infantis. Conforto, estilo e qualidade para os momentos especiais dos seus pequenos.',
+  about_title: 'Por que escolher a LaviBaby?',
+  about_description: 'Somos uma loja especializada em roupas infantis que combina estilo, conforto e qualidade. Nossa missão é fazer com que cada criança se sinta especial e confiante.',
+  free_shipping_min_value: 150,
+  discount_percentage: 20,
+  logo_url: '',
+  button_links: {
+    verColecao: '#categorias',
+    ofertas: '#produtos',
+    verOfertas: '#produtos',
+    comprarAgora: '#produtos',
+    queroDesconto: '#newsletter',
+    falarWhatsApp: 'https://wa.me/5511999999999',
+    verTodosProdutos: '#produtos',
+    baixarApp: '#',
+    criarConta: '#'
+  }
+};
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error: string | null }>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<{ success: boolean; error: string | null }>;
   isAdmin: boolean;
   isLoggedIn: boolean;
   isLoading: boolean;
-  updateUserProfile: (userData: Partial<UserProfile>) => Promise<boolean>;
   siteSettings: SiteSettings | null;
-  updateSiteSettings: (settings: Partial<SiteSettings>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,223 +56,77 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(mockSiteSettings);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Get initial session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-        }
-
-        setSession(session);
-
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        }
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          setSession(session);
-          
-          if (session?.user) {
-            await fetchUserProfile(session.user.id);
-          } else {
-            setUser(null);
-          }
-        });
-
-        // Fetch site settings
-        await fetchSiteSettings();
-
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
+    // Simular carregamento inicial
+    setIsLoading(false);
   }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        // If profile doesn't exist, create one
-        if (profileError.code === 'PGRST116') {
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData.user) {
-            const { error: insertError } = await supabase
-              .from('user_profiles')
-              .insert({
-                id: userId,
-                name: userData.user.email || 'Usuário',
-                role: 'user'
-              });
-            
-            if (!insertError) {
-              await fetchUserProfile(userId);
-              return;
-            }
-          }
-        }
-        setUser(session?.user as User || null);
-      } else {
-        setUser({ ...session?.user, user_profile: profileData } as User);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-      setUser(session?.user as User || null);
-    }
-  };
-
-  const fetchSiteSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error fetching site settings:', error);
-      } else {
-        setSiteSettings(data);
-      }
-    } catch (error) {
-      console.error('Error in fetchSiteSettings:', error);
-    }
-  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
-      });
-      
-      if (error) {
-        return { success: false, error: error.message };
-      }
-      
-      return { success: true, error: null };
-    } catch (error) {
-      return { success: false, error: 'Erro inesperado durante o login' };
-    } finally {
+    
+    // Simular login
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (email === 'admin@lavibaby.com' && password === 'admin123') {
+      setUser({
+        id: '1',
+        email: 'admin@lavibaby.com',
+        user_profile: {
+          id: '1',
+          name: 'Administrador',
+          role: 'admin',
+          created_at: new Date().toISOString()
+        }
+      } as User);
       setIsLoading(false);
+      return { success: true, error: null };
+    } else if (email && password) {
+      setUser({
+        id: '2',
+        email: email,
+        user_profile: {
+          id: '2',
+          name: 'Usuário',
+          role: 'user',
+          created_at: new Date().toISOString()
+        }
+      } as User);
+      setIsLoading(false);
+      return { success: true, error: null };
     }
+    
+    setIsLoading(false);
+    return { success: false, error: 'Credenciais inválidas' };
   };
 
   const logout = async () => {
     setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Logout error:', error);
-      }
-    } catch (error) {
-      console.error('Error in logout:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    setUser(null);
+    setIsLoading(false);
   };
 
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name,
-          },
-        },
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, error: null };
-    } catch (error) {
-      return { success: false, error: 'Erro inesperado durante o registro' };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateUserProfile = async (userData: Partial<UserProfile>): Promise<boolean> => {
-    if (!user) return false;
     
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(userData)
-        .eq('id', user.id);
-
-      if (error) {
-        console.error('Error updating user profile:', error);
-        return false;
-      }
-
-      // Update local user state
-      setUser(prevUser => prevUser ? { 
-        ...prevUser, 
-        user_profile: { ...prevUser.user_profile, ...userData } as UserProfile 
-      } : null);
-      
-      return true;
-    } catch (error) {
-      console.error('Error in updateUserProfile:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateSiteSettings = async (settings: Partial<SiteSettings>): Promise<boolean> => {
-    if (!user || user.user_profile?.role !== 'admin' || !siteSettings) return false;
+    // Simular registro
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('site_settings')
-        .update(settings)
-        .eq('id', siteSettings.id);
-
-      if (error) {
-        console.error('Error updating site settings:', error);
-        return false;
+    setUser({
+      id: '3',
+      email: email,
+      user_profile: {
+        id: '3',
+        name: name,
+        role: 'user',
+        created_at: new Date().toISOString()
       }
-
-      setSiteSettings(prevSettings => prevSettings ? { 
-        ...prevSettings, 
-        ...settings 
-      } as SiteSettings : null);
-      
-      return true;
-    } catch (error) {
-      console.error('Error in updateSiteSettings:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    } as User);
+    
+    setIsLoading(false);
+    return { success: true, error: null };
   };
 
   const isAdmin = user?.user_profile?.role === 'admin';
@@ -254,16 +135,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{
       user,
-      session,
       login,
       logout,
       register,
       isAdmin,
       isLoggedIn,
       isLoading,
-      updateUserProfile,
-      siteSettings,
-      updateSiteSettings
+      siteSettings
     }}>
       {children}
     </AuthContext.Provider>

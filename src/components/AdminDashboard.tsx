@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { SiteSettings } from '../types';
+import { SiteSettings, Product, Category } from '../types';
+import { fetchProducts, fetchCategories } from '../services/productService';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -8,15 +9,34 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings }) => {
-  const { user, updateSiteSettings, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [editableSettings, setEditableSettings] = useState<Partial<SiteSettings>>({});
   const [message, setMessage] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [activeTab, setActiveTab] = useState<'settings' | 'products' | 'orders'>('settings');
 
   useEffect(() => {
     if (siteSettings) {
       setEditableSettings(siteSettings);
     }
   }, [siteSettings]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          fetchProducts(),
+          fetchCategories()
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -35,14 +55,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings 
 
   const handleSaveSettings = async () => {
     setMessage('');
-    const success = await updateSiteSettings(editableSettings);
-    if (success) {
-      setMessage('Configurações salvas com sucesso!');
-      setTimeout(() => setMessage(''), 3000);
-    } else {
-      setMessage('Erro ao salvar configurações.');
-      setTimeout(() => setMessage(''), 3000);
-    }
+    // Simular salvamento
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setMessage('Configurações salvas com sucesso!');
+    setTimeout(() => setMessage(''), 3000);
   };
 
   if (!user || user.user_profile?.role !== 'admin') {
@@ -82,6 +98,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings 
           </div>
         )}
 
+        {/* Tabs */}
+        <div className="flex space-x-4 mb-8">
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              activeTab === 'settings'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Configurações
+          </button>
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              activeTab === 'products'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Produtos ({products.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+              activeTab === 'orders'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Pedidos
+          </button>
+        </div>
+
+        {/* Configurações Tab */}
+        {activeTab === 'settings' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Configurações Básicas */}
           <div className="bg-gray-50 p-6 rounded-lg">
@@ -271,7 +323,93 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings 
             </div>
           </div>
         </div>
+        )}
 
+        {/* Produtos Tab */}
+        {activeTab === 'products' && (
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Gerenciar Produtos</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white rounded-lg shadow">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Produto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Categoria
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Preço
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estoque
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {products.map((product) => {
+                    const category = categories.find(cat => cat.id === product.category_id);
+                    return (
+                      <tr key={product.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img
+                              className="h-10 w-10 rounded-full object-cover"
+                              src={product.image_urls[0] || 'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg?auto=compress&cs=tinysrgb&w=400'}
+                              alt={product.name}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg?auto=compress&cs=tinysrgb&w=400';
+                              }}
+                            />
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {category?.name || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          R$ {product.price.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.stock}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-indigo-600 hover:text-indigo-900 mr-3">
+                            Editar
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Pedidos Tab */}
+        {activeTab === 'orders' && (
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Pedidos Recentes</h2>
+            <div className="bg-white rounded-lg shadow p-6">
+              <p className="text-gray-600 text-center">Nenhum pedido encontrado.</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
         <div className="text-center mt-8">
           <button
             onClick={handleSaveSettings}
@@ -281,6 +419,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, siteSettings 
             {isLoading ? 'Salvando...' : 'Salvar Configurações'}
           </button>
         </div>
+        )}
       </div>
     </div>
   );

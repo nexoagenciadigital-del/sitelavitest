@@ -14,7 +14,7 @@ interface CartProps {
 const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout }) => {
   if (!isOpen) return null;
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-50">
@@ -32,11 +32,19 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
           ) : (
             items.map((item) => (
               <div key={item.id} className="flex items-center border-b border-gray-100 pb-4">
-                <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-md mr-4" />
+                <img 
+                  src={item.product.image_urls[0] || 'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg?auto=compress&cs=tinysrgb&w=400'} 
+                  alt={item.product.name} 
+                  className="w-20 h-20 object-cover rounded-md mr-4"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://images.pexels.com/photos/1029243/pexels-photo-1029243.jpeg?auto=compress&cs=tinysrgb&w=400';
+                  }}
+                />
                 <div className="flex-grow">
-                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">{item.product.name}</h3>
                   <p className="text-gray-600 text-sm">Tamanho: {item.size || 'N/A'}</p>
-                  <p className="text-indigo-600 font-bold">R${item.price.toFixed(2)}</p>
+                  <p className="text-indigo-600 font-bold">R${item.product.price.toFixed(2)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
